@@ -113,7 +113,9 @@ export function RouteSearchPage() {
         }}
       />
       <RouteSearchForm onSearch={handleSearch} searchCategory={viewMode} />
-      <TransportModeToolbar value={transportFilter} onChange={setTransportFilter} />
+      {viewMode !== "subway" && (
+        <TransportModeToolbar value={transportFilter} onChange={setTransportFilter} />
+      )}
 
       {(viewMode === "map" || viewMode === "bike") && (
         <RouteOverviewMap
