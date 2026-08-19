@@ -1,0 +1,40 @@
+.route-comparison {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.route-comparison__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.route-comparison__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.route-comparison__table th,
+.route-comparison__table td {
+  text-align: center;
+  padding: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.route-comparison__table th:first-child,
+.route-comparison__table td:first-child {
+  text-align: left;
+  color: var(--text-sub);
+}
+
+.route-comparison__table th {
+  color: var(--text-sub);
+  font-weight: 600;
+  font-size: 11px;
+}
