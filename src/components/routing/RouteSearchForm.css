@@ -99,10 +99,6 @@
   cursor: pointer;
 }
 
-.route-search-form__field--time input {
-  font-family: var(--font-mono);
-}
-
 .route-search-form__swap {
   background: var(--surface-muted);
   color: var(--primary);
@@ -111,55 +107,6 @@
   width: 32px;
   height: 32px;
   cursor: pointer;
-}
-
-.route-search-form__time-presets {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.route-search-form__preset {
-  background: var(--surface-muted);
-  color: var(--text-sub);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-chip);
-  padding: 6px 12px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.route-search-form__preset--active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.route-search-form__preset-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.route-search-form__preset-edit-btn {
-  background: none;
-  border: none;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 2px;
-  opacity: 0.6;
-}
-
-.route-search-form__preset-edit-btn:hover {
-  opacity: 1;
-}
-
-.route-search-form__preset-edit-input {
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-control);
-  padding: 5px 8px;
-  font-size: 12px;
-  font-family: var(--font-mono);
 }
 
 .route-search-form__submit {

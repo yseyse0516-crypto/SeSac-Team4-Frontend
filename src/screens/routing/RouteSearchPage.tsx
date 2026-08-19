@@ -83,11 +83,11 @@ export function RouteSearchPage() {
     }
 
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      // 기준시간 입력을 없앴으므로, 검색을 실행하는 지금 이 순간을 그대로 기준시간으로 쓴다.
       const response = await fetchRoutes({
         origin: values.originCoords ?? PLACEHOLDER_ORIGIN,
         destination: values.destinationCoords ?? PLACEHOLDER_DESTINATION,
-        departAt: `${today}T${values.departAt}:00+09:00`,
+        departAt: new Date().toISOString(),
       });
       if (response.routes.length === 0) {
         setRoutes([]);

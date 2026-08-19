@@ -5,14 +5,14 @@ import { addRecentSearch, getRecentSearches, type SearchCategory } from "../../u
 import type { LatLng } from "../../types/routing";
 import "./RouteSearchForm.css";
 
-// 목업의 "경로탐색" 입력 영역과 동일한 필드: 출발지/도착지/기준시간 + 즐겨찾기 + 탐색버튼.
+// 출발지/도착지 + 즐겨찾기 + 탐색버튼. 기준시간 입력은 뺐다 — 실행하는 시점의 현재 시간
+// 기준으로 바로 조회하면 되는 기능이라 별도 입력이 불필요하다는 판단 (RouteSearchPage에서 처리).
 // 실험(ui-sandbox) 버전: 타이핑 대신 지도 탭으로도 좌표를 고를 수 있고, 출발지 기본값은 브라우저
 // Geolocation으로 채운다. 실제 텅텅 리포지토리(frontend/)에는 아직 반영 안 함.
 
 export interface RouteSearchValues {
   originText: string;
   destinationText: string;
-  departAt: string; // "HH:mm" 형태
   originCoords?: LatLng;
   destinationCoords?: LatLng;
 }
@@ -32,7 +32,6 @@ export function RouteSearchForm({ onSearch, searchCategory }: RouteSearchFormPro
   const [destinationText, setDestinationText] = useState("");
   const [originCoords, setOriginCoords] = useState<LatLng | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<LatLng | null>(null);
-  const [departAt, setDepartAt] = useState("08:00");
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
   const [locating, setLocating] = useState(false);
 
@@ -59,12 +58,6 @@ export function RouteSearchForm({ onSearch, searchCategory }: RouteSearchFormPro
       { timeout: 5000 }
     );
   }, []);
-
-  const [presets, setPresets] = useState([
-    { label: "오전 8시 출근", value: "08:00" },
-    { label: "오후 6시 퇴근", value: "18:00" },
-  ]);
-  const [editingPreset, setEditingPreset] = useState<number | null>(null);
 
   // 즐겨찾기도 편집 가능하게 — 이 화면 세션 동안만 유지되는 로컬 state (새로고침하면 초기 목록으로 리셋).
   const [favorites, setFavorites] = useState<FavoriteStop[]>(FAVORITE_STOPS);
@@ -113,7 +106,6 @@ export function RouteSearchForm({ onSearch, searchCategory }: RouteSearchFormPro
     onSearch({
       originText,
       destinationText,
-      departAt,
       originCoords: originCoords ?? undefined,
       destinationCoords: destinationCoords ?? undefined,
     });
@@ -219,15 +211,6 @@ export function RouteSearchForm({ onSearch, searchCategory }: RouteSearchFormPro
             )}
           </div>
         </label>
-
-        <label className="route-search-form__field route-search-form__field--time">
-          <span>기준시간</span>
-          <input
-            type="time"
-            value={departAt}
-            onChange={(e) => setDepartAt(e.target.value)}
-          />
-        </label>
       </div>
 
       {activePicker && (
@@ -240,46 +223,6 @@ export function RouteSearchForm({ onSearch, searchCategory }: RouteSearchFormPro
           onPick={handlePick}
         />
       )}
-
-      <div className="route-search-form__time-presets">
-        {presets.map((preset, i) => (
-          <div key={i} className="route-search-form__preset-group">
-            {editingPreset === i ? (
-              <input
-                type="time"
-                autoFocus
-                value={preset.value}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setPresets((prev) => prev.map((p, idx) => (idx === i ? { ...p, value } : p)));
-                }}
-                onBlur={() => setEditingPreset(null)}
-                className="route-search-form__preset-edit-input"
-              />
-            ) : (
-              <button
-                type="button"
-                className={
-                  departAt === preset.value
-                    ? "route-search-form__preset route-search-form__preset--active"
-                    : "route-search-form__preset"
-                }
-                onClick={() => setDepartAt(preset.value)}
-              >
-                {preset.label} ({preset.value})
-              </button>
-            )}
-            <button
-              type="button"
-              className="route-search-form__preset-edit-btn"
-              onClick={() => setEditingPreset(editingPreset === i ? null : i)}
-              aria-label={`${preset.label} 시간 직접 설정`}
-            >
-              ✏️
-            </button>
-          </div>
-        ))}
-      </div>
 
       <div className="route-search-form__favorites">
         <span>즐겨찾기</span>
