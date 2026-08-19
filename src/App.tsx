@@ -14,11 +14,10 @@ type Screen = "signup" | "routing" | "community" | "account";
 const NAV_ITEMS: { key: Screen; label: string }[] = [
   { key: "routing", label: "경로 찾기" },
   { key: "community", label: "커뮤니티" },
-  { key: "account", label: "계정" },
 ];
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("signup");
+  const [screen, setScreen] = useState<Screen>("routing");
   const [nickname, setNickname] = useState("익명");
 
   function handleLogout() {
