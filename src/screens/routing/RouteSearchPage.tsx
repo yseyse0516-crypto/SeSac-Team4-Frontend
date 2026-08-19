@@ -10,6 +10,7 @@ import {
 import { NearbyBikeDocks } from "../../components/routing/NearbyBikeDocks";
 import { RouteComparisonTable } from "../../components/routing/RouteComparisonTable";
 import { SubwayLineDiagram } from "../../components/routing/SubwayLineDiagram";
+import { SecondaryFeaturesToolbar, type SecondaryFeature } from "../../components/routing/SecondaryFeaturesToolbar";
 import { fetchRoutes, RouteSearchError } from "../../api/routes";
 import type { RouteCandidate } from "../../types/routing";
 
@@ -57,13 +58,20 @@ export function RouteSearchPage() {
   const [lastValues, setLastValues] = useState<RouteSearchValues | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [transportFilter, setTransportFilter] = useState<TransportModeFilter>("transit_walk");
+  const [activeSecondary, setActiveSecondary] = useState<string | null>(null);
 
   const visibleRoutes = routes.filter((route) => matchesTransportModeFilter(route, transportFilter));
+
+  const secondaryFeatures: SecondaryFeature[] = [
+    { key: "comparison", label: "비교표", icon: "📊" },
+    ...(viewMode === "bike" ? [{ key: "docks", label: "대여소 목록", icon: "🚲" }] : []),
+  ];
 
   async function handleSearch(values: RouteSearchValues) {
     setLoading(true);
     setError(null);
     setLastValues(values);
+    setActiveSecondary(null);
 
     const debugError = DEBUG_ERROR_TRIGGER[values.destinationText.trim()];
     if (debugError) {
@@ -97,7 +105,13 @@ export function RouteSearchPage() {
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 20px" }}>
-      <ViewModeToolbar value={viewMode} onChange={setViewMode} />
+      <ViewModeToolbar
+        value={viewMode}
+        onChange={(mode) => {
+          setViewMode(mode);
+          setActiveSecondary(null);
+        }}
+      />
       <RouteSearchForm onSearch={handleSearch} searchCategory={viewMode} />
       <TransportModeToolbar value={transportFilter} onChange={setTransportFilter} />
 
@@ -160,10 +174,17 @@ export function RouteSearchPage() {
 
       {!loading && !error && visibleRoutes.length > 0 && (
         <>
-          <RouteComparisonTable routes={visibleRoutes} />
-          {viewMode === "bike" && (
-            <NearbyBikeDocks from={lastValues?.originCoords ?? PLACEHOLDER_ORIGIN} />
-          )}
+          <SecondaryFeaturesToolbar
+            features={secondaryFeatures}
+            activeKey={activeSecondary}
+            onSelect={setActiveSecondary}
+          />
+          <div className="secondary-toolbar__panel">
+            {activeSecondary === "comparison" && <RouteComparisonTable routes={visibleRoutes} />}
+            {activeSecondary === "docks" && (
+              <NearbyBikeDocks from={lastValues?.originCoords ?? PLACEHOLDER_ORIGIN} />
+            )}
+          </div>
         </>
       )}
 
