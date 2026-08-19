@@ -14,6 +14,7 @@ type Screen = "signup" | "routing" | "community" | "account";
 const NAV_ITEMS: { key: Screen; label: string }[] = [
   { key: "routing", label: "경로 찾기" },
   { key: "community", label: "커뮤니티" },
+  { key: "account", label: "계정" },
 ];
 
 function App() {
