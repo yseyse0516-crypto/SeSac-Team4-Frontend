@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./SignupPage.css";
 
-// ⚠️ 실험용(ui-sandbox) 화면. 텅텅 1차 MVP는 비회원 서비스라 CLAUDE.md상 회원가입 기능이 없다 —
+// ⚠️ 실험용(ui-sandbox) 화면. BIUM 1차 MVP는 비회원 서비스라 CLAUDE.md상 회원가입 기능이 없다 —
 // 실제 백엔드 계정 생성도 없이, 입력만 받고 onSignedUp을 호출하는 프론트 전용 mock이다.
 
 interface SignupPageProps {
@@ -27,7 +27,7 @@ export function SignupPage({ onSignedUp }: SignupPageProps) {
   return (
     <div className="signup-page">
       <form className="signup-page__card" onSubmit={handleSubmit}>
-        <h1 className="signup-page__title">텅텅 시작하기</h1>
+        <h1 className="signup-page__title">BIUM 시작하기</h1>
         <p className="signup-page__subtitle">가입하고 바로 혼잡회피 경로를 찾아보세요.</p>
 
         <label className="signup-page__field">

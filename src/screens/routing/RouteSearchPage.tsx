@@ -2,16 +2,12 @@ import { useState } from "react";
 import { RouteSearchForm, type RouteSearchValues } from "../../components/routing/RouteSearchForm";
 import { RouteOverviewMap } from "../../components/routing/RouteOverviewMap";
 import { ViewModeToolbar, type ViewMode } from "../../components/routing/ViewModeToolbar";
-import {
-  TransportModeToolbar,
-  matchesTransportModeFilter,
-  type TransportModeFilter,
-} from "../../components/routing/TransportModeToolbar";
 import { NearbyBikeDocks } from "../../components/routing/NearbyBikeDocks";
 import { RouteComparisonTable } from "../../components/routing/RouteComparisonTable";
 import { SubwayLineDiagram } from "../../components/routing/SubwayLineDiagram";
 import { fetchRoutes, RouteSearchError } from "../../api/routes";
 import type { RouteCandidate } from "../../types/routing";
+import "./RouteOptionsBar.css";
 
 // 좌표 변환(geocoding)이 아직 없어서, 검색 시 임시로 목업 origin/destination 좌표를 그대로 사용한다.
 // 실제 geocoding이 붙으면 originText/destinationText -> LatLng 변환 로직만 이 자리에 추가하면 된다.
@@ -26,10 +22,12 @@ interface SearchError {
   message: string;
 }
 
+// backend/app/routers/search.py 기준: 400 INVALID_INPUT / 404 NO_CANDIDATE /
+// 503 UPSTREAM_QUOTA_EXCEEDED(ODsay 일일 쿼터 초과) / 502 UPSTREAM_ERROR.
 const ERROR_BY_STATUS: Record<number, SearchError> = {
   400: { kind: "invalid_input", message: "출발지를 다시 선택해 주세요." },
   404: { kind: "no_candidate", message: "추천 경로를 찾지 못했습니다." },
-  429: { kind: "quota_exceeded", message: "잠시 후 다시 시도해 주세요." },
+  503: { kind: "quota_exceeded", message: "잠시 후 다시 시도해 주세요." },
   502: { kind: "upstream_error", message: "연동 시스템에 문제가 발생했습니다." },
 };
 
@@ -46,7 +44,7 @@ function toSearchError(err: unknown): SearchError {
 const DEBUG_ERROR_TRIGGER: Record<string, SearchError> = {
   "테스트400": ERROR_BY_STATUS[400],
   "테스트404": ERROR_BY_STATUS[404],
-  "테스트429": ERROR_BY_STATUS[429],
+  "테스트503": ERROR_BY_STATUS[503],
   "테스트502": ERROR_BY_STATUS[502],
 };
 
@@ -56,9 +54,7 @@ export function RouteSearchPage() {
   const [error, setError] = useState<SearchError | null>(null);
   const [lastValues, setLastValues] = useState<RouteSearchValues | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
-  const [transportFilter, setTransportFilter] = useState<TransportModeFilter>("transit_walk");
-
-  const visibleRoutes = routes.filter((route) => matchesTransportModeFilter(route, transportFilter));
+  const [onlyRecommended, setOnlyRecommended] = useState(false);
 
   async function handleSearch(values: RouteSearchValues) {
     setLoading(true);
@@ -75,17 +71,16 @@ export function RouteSearchPage() {
     }
 
     try {
-      // 기준시간 입력을 없앴으므로, 검색을 실행하는 지금 이 순간을 그대로 기준시간으로 쓴다.
+      // 기준시간 입력을 없앴으므로 departure_time을 안 보내면, 백엔드가 현재 시각 기준으로 조회한다.
       const response = await fetchRoutes({
         origin: values.originCoords ?? PLACEHOLDER_ORIGIN,
         destination: values.destinationCoords ?? PLACEHOLDER_DESTINATION,
-        departAt: new Date().toISOString(),
       });
-      if (response.routes.length === 0) {
+      if (response.candidates.length === 0) {
         setRoutes([]);
         setError(ERROR_BY_STATUS[404]);
       } else {
-        setRoutes(response.routes);
+        setRoutes(response.candidates);
       }
     } catch (err) {
       setRoutes([]);
@@ -99,15 +94,29 @@ export function RouteSearchPage() {
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 20px" }}>
       <ViewModeToolbar value={viewMode} onChange={setViewMode} />
       <RouteSearchForm onSearch={handleSearch} searchCategory={viewMode} />
-      {viewMode !== "subway" && (
-        <TransportModeToolbar value={transportFilter} onChange={setTransportFilter} />
+
+      {(viewMode === "map" || viewMode === "bike") && (
+        <div className="route-options-bar">
+          <button
+            type="button"
+            className={
+              onlyRecommended
+                ? "route-options-bar__chip route-options-bar__chip--active"
+                : "route-options-bar__chip"
+            }
+            onClick={() => setOnlyRecommended((v) => !v)}
+          >
+            추천 경로만 보기
+          </button>
+        </div>
       )}
 
       {(viewMode === "map" || viewMode === "bike") && (
         <RouteOverviewMap
-          routes={visibleRoutes}
+          routes={routes}
           center={lastValues?.originCoords ?? PLACEHOLDER_ORIGIN}
           showBikeToggle={viewMode === "bike"}
+          onlyRecommended={onlyRecommended}
         />
       )}
       {viewMode === "subway" && <SubwayLineDiagram />}
@@ -160,19 +169,13 @@ export function RouteSearchPage() {
         </div>
       )}
 
-      {!loading && !error && visibleRoutes.length > 0 && (
+      {!loading && !error && routes.length > 0 && (
         <>
-          <RouteComparisonTable routes={visibleRoutes} />
+          <RouteComparisonTable routes={routes} />
           {viewMode === "bike" && (
             <NearbyBikeDocks from={lastValues?.originCoords ?? PLACEHOLDER_ORIGIN} />
           )}
         </>
-      )}
-
-      {!loading && !error && routes.length > 0 && visibleRoutes.length === 0 && (
-        <p style={{ color: "var(--text-sub)", fontSize: 13, marginTop: 8 }}>
-          이 이동수단 조합에 맞는 경로가 없어요.
-        </p>
       )}
     </div>
   );

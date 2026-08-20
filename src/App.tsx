@@ -18,7 +18,7 @@ const NAV_ITEMS: { key: Screen; label: string }[] = [
 ];
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("routing");
+  const [screen, setScreen] = useState<Screen>("signup");
   const [nickname, setNickname] = useState("익명");
 
   function handleLogout() {

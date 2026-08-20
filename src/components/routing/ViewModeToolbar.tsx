@@ -6,7 +6,7 @@ export type ViewMode = "map" | "subway" | "bike";
 const MODES: { key: ViewMode; label: string; icon: string }[] = [
   { key: "map", label: "지도", icon: "🗺️" },
   { key: "subway", label: "지하철", icon: "🚇" },
-  { key: "bike", label: "따릉이", icon: "🚲" },
+  { key: "bike", label: "자전거", icon: "🚲" },
 ];
 
 interface ViewModeToolbarProps {
@@ -14,6 +14,7 @@ interface ViewModeToolbarProps {
   onChange: (mode: ViewMode) => void;
 }
 
+// 출발지/도착지 입력 위, 화면 맨 위에 독립적으로 뜨는 큰 탭 — 아이콘을 키워서 한눈에 구분되게 한다.
 export function ViewModeToolbar({ value, onChange }: ViewModeToolbarProps) {
   return (
     <div className="view-mode-toolbar">
@@ -28,7 +29,7 @@ export function ViewModeToolbar({ value, onChange }: ViewModeToolbarProps) {
           }
           onClick={() => onChange(mode.key)}
         >
-          <span>{mode.icon}</span>
+          <span className="view-mode-toolbar__icon">{mode.icon}</span>
           <span>{mode.label}</span>
         </button>
       ))}
