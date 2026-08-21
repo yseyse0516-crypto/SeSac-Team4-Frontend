@@ -1,16 +1,11 @@
 import { useState } from "react";
 import { RouteSearchForm, type RouteSearchValues } from "../../components/routing/RouteSearchForm";
 import { ViewModeToolbar, type ViewMode } from "../../components/routing/ViewModeToolbar";
-import { NearbyBikeDocks } from "../../components/routing/NearbyBikeDocks";
+import { BikeDockFinder } from "../../components/routing/BikeDockFinder";
 import { RouteComparisonTable } from "../../components/routing/RouteComparisonTable";
 import { fetchRoutes, RouteSearchError } from "../../api/routes";
 import type { RouteCandidate } from "../../types/routing";
 import "./RouteOptionsBar.css";
-
-// 좌표 변환(geocoding)이 아직 없어서, 검색 시 임시로 목업 origin/destination 좌표를 그대로 사용한다.
-// 실제 geocoding이 붙으면 originText/destinationText -> LatLng 변환 로직만 이 자리에 추가하면 된다.
-const PLACEHOLDER_ORIGIN = { lat: 37.4671, lng: 126.897 };
-const PLACEHOLDER_DESTINATION = { lat: 37.4459, lng: 126.8917 };
 
 // frontend-plan.md §3.3에 정의된 에러코드별 UI 처리.
 type SearchErrorKind = "invalid_input" | "no_candidate" | "quota_exceeded" | "upstream_error";
@@ -53,11 +48,15 @@ export function RouteSearchPage() {
   const [lastValues, setLastValues] = useState<RouteSearchValues | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [onlyRecommended, setOnlyRecommended] = useState(false);
+  // "전체" 탭에서 최단시간/추천 카드 선택 상태 — 지도가 선택된 경로만 상세히 보여줘야 해서
+  // RouteComparisonTable과 RouteSearchForm(지도)이 같이 참조하도록 여기서 들고 있는다.
+  const [selectedComparison, setSelectedComparison] = useState<"fastest" | "recommended" | null>(null);
 
   async function handleSearch(values: RouteSearchValues) {
     setLoading(true);
     setError(null);
     setLastValues(values);
+    setSelectedComparison(null);
 
     const debugError = DEBUG_ERROR_TRIGGER[values.destinationText.trim()];
     if (debugError) {
@@ -68,11 +67,21 @@ export function RouteSearchPage() {
       return;
     }
 
+    // 지오코딩 실패 등으로 좌표를 못 구한 경우 — 절대 임의 좌표로 조용히 검색하지 않고
+    // 명시적으로 에러를 보여준다(예전엔 여기서 목업 좌표로 폴백해 엉뚱한 위치가 검색되는 버그가 있었다).
+    if (!values.originCoords || !values.destinationCoords) {
+      setRoutes([]);
+      setError(ERROR_BY_STATUS[400]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 기준시간 입력을 없앴으므로 departure_time을 안 보내면, 백엔드가 현재 시각 기준으로 조회한다.
+      // "지금 출발"(departureTime 미지정)이면 departure_time을 안 보내고, 백엔드가 현재 시각 기준으로 조회한다.
       const response = await fetchRoutes({
-        origin: values.originCoords ?? PLACEHOLDER_ORIGIN,
-        destination: values.destinationCoords ?? PLACEHOLDER_DESTINATION,
+        origin: values.originCoords,
+        destination: values.destinationCoords,
+        departure_time: values.departureTime,
       });
       if (response.candidates.length === 0) {
         setRoutes([]);
@@ -88,6 +97,24 @@ export function RouteSearchPage() {
     }
   }
 
+  const selectedRoute =
+    selectedComparison === "fastest"
+      ? routes.find((r) => r.is_fastest) ?? routes[0] ?? null
+      : selectedComparison === "recommended"
+        ? routes.find((r) => r.is_recommended) ?? routes[0] ?? null
+        : null;
+
+  // 자전거 탭은 출발지/도착지 검색 흐름을 아예 안 쓰는 별도 화면이라(§ 요청: "다른거랑 달리
+  // 비교적 심플하게") 여기서 완전히 분기한다.
+  if (viewMode === "bike") {
+    return (
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 20px" }}>
+        <ViewModeToolbar value={viewMode} onChange={setViewMode} />
+        <BikeDockFinder />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 20px" }}>
       <ViewModeToolbar value={viewMode} onChange={setViewMode} />
@@ -96,7 +123,7 @@ export function RouteSearchPage() {
         searchCategory={viewMode}
         routes={routes}
         onlyRecommended={onlyRecommended}
-        showBikeToggle={viewMode === "bike"}
+        selectedRoute={selectedRoute}
       />
 
       <div className="route-options-bar">
@@ -161,13 +188,12 @@ export function RouteSearchPage() {
         </div>
       )}
 
-      {!loading && !error && routes.length > 0 && (
-        <>
-          <RouteComparisonTable routes={routes} />
-          {viewMode === "bike" && (
-            <NearbyBikeDocks from={lastValues?.originCoords ?? PLACEHOLDER_ORIGIN} />
-          )}
-        </>
+      {!loading && !error && routes.length > 0 && lastValues?.originCoords && (
+        <RouteComparisonTable
+          routes={routes}
+          selected={selectedComparison}
+          onSelectedChange={setSelectedComparison}
+        />
       )}
     </div>
   );
